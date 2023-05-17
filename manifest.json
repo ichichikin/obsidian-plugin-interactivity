@@ -1,0 +1,10 @@
+{
+	"author": "ichichikin",
+	"authorUrl": "",
+	"description": "Run everything inside your notes",
+	"id": "interactivity",
+	"isDesktopOnly": false,
+	"minAppVersion": "0.12.17",
+	"name": "Interactivity",
+	"version": "0.0.1"
+}
