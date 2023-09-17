@@ -1,10 +1,10 @@
 {
 	"author": "ichichikin",
 	"authorUrl": "",
-	"description": "Run everything inside your notes",
+	"description": "The Interactivity plugin allows you to run any executables inside your Obsidian notes.",
 	"id": "interactivity",
 	"isDesktopOnly": false,
 	"minAppVersion": "0.12.17",
 	"name": "Interactivity",
-	"version": "0.0.1"
+	"version": "0.0.2"
 }

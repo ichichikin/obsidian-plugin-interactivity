@@ -6,10 +6,7 @@ interface InteractivityPluginSettings {
 	shellExec: string;
 	shellParams: string;
 	startupInput: string;
-	keyword: string;
-	lineKeyword: string;
 	notice:  boolean;
-	byEnter:  boolean;
 	decorateMultiline:  boolean;
 	omitStrings: number;
 	separatedShells:  boolean;	
@@ -17,6 +14,7 @@ interface InteractivityPluginSettings {
 	enviromentVariables: string;
 	executeOnUnload: string;
 	regexpCleaner: string;
+	shortcuts: string;
 	advanced: boolean;
 }
 
@@ -24,10 +22,7 @@ const DEFAULT_SETTINGS: InteractivityPluginSettings = {
 	shellExec: 'python',
 	shellParams: '-iq\n##plugin##basics.py\n',
 	startupInput: 'openai.api_key = "sk-"\nload()\n',
-	keyword: '```i',
-	lineKeyword: '@@',
 	notice: false,
-	byEnter: true,
 	decorateMultiline: true,
 	omitStrings: 1,
 	separatedShells: false,	
@@ -35,6 +30,7 @@ const DEFAULT_SETTINGS: InteractivityPluginSettings = {
 	enviromentVariables: "PYTHONIOENCODING=utf8\n",
 	executeOnUnload: "save()\nexit()\n",
 	regexpCleaner: '^((>>> )|(\.\.\. ))+',
+	shortcuts: '`@ -> ##param##',
 	advanced: false
 }
 
@@ -43,10 +39,12 @@ const __EVAL = s => eval(`void (__EVAL = ${__EVAL.toString()}); ${s}`);
 export default class InteractivityPlugin extends Plugin {
 	settings: InteractivityPluginSettings;
 	allSubprocesses: Object = {};
-	byEnter: boolean = false;
 	warmupOnly: boolean = false;
 	modal: boolean = false;
 	advanced: boolean = false;
+	byEnter: boolean = false;
+	processingNote: string = '';
+	statusBarItemEl: Object = {};
 
 	async onload() {
 		await this.loadSettings();
@@ -63,7 +61,7 @@ export default class InteractivityPlugin extends Plugin {
 				this.warmupOnly = false;
 			}
 			// Process the Enter key
-			if (evt.keyCode == 13 && !evt.shiftKey && this.app.workspace.activeEditor && this.settings.byEnter) {
+			if (evt.keyCode == 13 && !evt.shiftKey && this.app.workspace.activeEditor) {
 				this.byEnter = true;
 				this.app['commands'].executeCommandById('interactivity:interactivity-execute');
 				this.byEnter = false;
@@ -83,54 +81,50 @@ export default class InteractivityPlugin extends Plugin {
 					cursor.ch = 0;
 				}
 
-				if (
-					typeof this.allSubprocesses[file] !== "undefined" &&
-					(
-						this.byEnter && this.settings.documentKeyword && editor.getValue().search(new RegExp('\n' + this.settings.documentKeyword + '\n', 'gi')) > -1 ||
-						this.byEnter && this.settings.documentKeyword && editor.getValue().search(new RegExp(this.settings.documentKeyword + '\n', 'gi')) == 0 ||
-						this.byEnter && this.settings.lineKeyword && editor.getLine(cursor.line - 1).search(new RegExp(this.settings.lineKeyword)) == 0 ||
-						!this.byEnter
-						)
-					) {
-			        function routine(editor: Editor, that) {
+				if (typeof this.allSubprocesses[file] !== "undefined") {
+			        function routine(that: InteractivityPlugin, byEnter: boolean, path: string, ch: integer) {
+			        	const editor = that.app.workspace.activeEditor.editor;
+			        	if (!editor)
+			        		return;
+
 						let selection = editor.getSelection();
 						let line = editor.getCursor().line;
-
-						if (selection.length == 0)
-							selection = editor.getLine(line);
-
-						if ((selection.match(/\n/gm) || []).length) {
-							let a = editor.listSelections()[0].anchor.line;
-							let b = editor.listSelections()[0].head.line;
-
-							if (a > b && editor.listSelections()[0].anchor.ch == 0)
-								a--;
-							if (a < b && editor.listSelections()[0].head.ch == 0)
-								b--;
-
-							let selections = [];
-							for (let i = Math.min(a, b); i <= Math.max(a, b); i++)
-								selections.push(editor.getLine(i));
-
-							selection = selections.join('\n');
-							line = Math.max(a, b);
+						let command = '';
+						let maxLen = 0;
+						for (const x of that.settings.shortcuts.split('\n')) {
+							let m = x.match(/(.*?)\s*->\s*(.*)/);
+							if (m && m.length > 2 && maxLen < m[1].length && editor.getLine(cursor.line - (byEnter ? 1 : 0)).indexOf(m[1]) == 0) {
+								command = m[2].replaceAll('##param##', editor.getLine(cursor.line - (byEnter ? 1 : 0)).slice(m[1].length));
+								maxLen = m[1].length;
+							}
 						}
-						// let line_offset = 0;
-						// while (true) {
-						// 	if (selection && selection[selection.length - 1] == '\n') {
-						// 		selection = selection.substring(0, selection.length - 1);
-						// 		line_offset++;
-						// 	}
-						// 	else
-						// 		break;
-						// }
-						// line -= line_offset;
+
+			        	if (command === '') {
+							if (selection.length == 0)
+								selection = editor.getLine(line);
+
+							if ((selection.match(/\n/gm) || []).length) {
+								let a = editor.listSelections()[0].anchor.line;
+								let b = editor.listSelections()[0].head.line;
+
+								if (a > b && editor.listSelections()[0].anchor.ch == 0)
+									a--;
+								if (a < b && editor.listSelections()[0].head.ch == 0)
+									b--;
+
+								let selections = [];
+								for (let i = Math.min(a, b); i <= Math.max(a, b); i++)
+									selections.push(editor.getLine(i));
+
+								selection = selections.join('\n');
+								line = Math.max(a, b);
+							}
+						}
+						else
+							selection = command;
 
 						editor.setCursor({'line': line, 'ch': editor.getLine(line).length});
 
-						selection = selection
-							.replace(new RegExp('\n' + that.settings.lineKeyword + '|\n' + that.settings.documentKeyword, 'mg'), '\n')
-							.replace(new RegExp('^' + that.settings.lineKeyword + '|^' + that.settings.documentKeyword, 'mg'), '');
 						if (selection.replace('\n', '').length) {
 							if (that.advanced)
 								that.allSubprocesses[file].stdin.write(selection + '\n');
@@ -142,50 +136,56 @@ export default class InteractivityPlugin extends Plugin {
 								catch(e) {
 									output = e;
 								}
-								if (typeof output !== 'undefined')
-									that.insertText(editor, output.toString(), that.settings.decorateMultiline, that.settings.prependOutput, that.settings.toNotice, that.advanced, that.removeLine);
+								if (typeof output !== 'undefined' && that.processingNote === that.app.workspace.getActiveFile().path) {
+									that.insertText(editor, output.toString(), that.settings.decorateMultiline, that.settings.prependOutput, that.settings.notice, that.advanced, that.removeLine);
+									// if (that.app.isMobile && byEnter && ch == selection.length + maxLen) {
+									// 	setTimeout((that, line, editor) => {
+									// 		that.removeLine(editor, line + 1);
+									// 		that.removeLine(editor, line + 1);
+									// 	}, 0, that, line, editor);
+									// }
+									that.statusBarItemEl.setText('🟩');
+								}
 							}
 						}
-						// selection.split('\n').forEach((line) => {
-						// 	if (line != this.settings.documentKeyword) {
-						// 		if (this.settings.lineKeyword)
-						// 			line = line.replace(new RegExp('^' + this.settings.lineKeyword), '');
-						// 		if (this.advanced)
-						// 			this.allSubprocesses[file].stdin.write(line + '\n');
-						// 		else {
-						// 			let output = "";
-						// 			try {
-						// 				output = __EVAL(line).toString();
-						// 			}
-						// 			catch(e) {
-						// 				output = e.toString();
-						// 			}
-						// 			this.insertText(editor, output, this.settings.decorateMultiline, this.settings.prependOutput, this.settings.toNotice, this.advanced, that.removeLine);
-						// 		}
-						// 	}
-						// });
 			        }
 
-					// avoid new lines in the middle of a string
-					if (this.byEnter && editor.getLine(cursor.line - 1).search(new RegExp(this.settings.lineKeyword)) == 0) {
+					const byEnter = this.byEnter; // We need to save a current state of byEnter
+					const ch = editor.getCursor().ch;
+
+					this.processingNote = this.app.workspace.getActiveFile().path;
+			        if (byEnter) {
+						let command = ''; // This is used only to identify shortcuts, the command itself might be affected by a new line breaker
+						for (const x of this.settings.shortcuts.split('\n')) {
+							let m = x.match(/(.*?)\s*->\s*(.*)/);
+							if (m && m.length > 2 && editor.getLine(cursor.line - (byEnter ? 1 : 0)).indexOf(m[1]) == 0) {
+								command = m[2].replaceAll('##param##', editor.getLine(cursor.line - (byEnter ? 1 : 0)).slice(m[1].length));
+								break;
+							}
+						}
+						if (command === '')
+							return;
+
 						if (this.app.isMobile) {
-							editor.setCursor({'line': cursor.line - 1, 'ch': editor.getLine(cursor.line - 1).length});
-							setTimeout((that) => {
-								editor.setCursor({'line': cursor.line - 1, 'ch': editor.getLine(cursor.line - 1).length});
-								routine(editor, that);
-								that.removeLine(editor, cursor.line + 1);
-								that.removeLine(editor, cursor.line + 1);
-								that.app.workspace.activeEditor.editor.setCursor({'line': cursor.line, 'ch': editor.getLine(cursor.line).length});
-							}, 0, this);
+							setTimeout((that: InteractivityPlugin, byEnter: boolean) => {
+								editor.setCursor({'line': cursor.line - (byEnter ? 1 : 0), 'ch': editor.getLine(cursor.line - (byEnter ? 1 : 0)).length});
+								that.statusBarItemEl.setText('⬜');
+								routine(that, byEnter, ch);
+								if (that.app.workspace.activeEditor)
+									that.app.workspace.activeEditor.editor.setCursor({'line': cursor.line, 'ch': editor.getLine(cursor.line).length});
+							}, 0, this, byEnter, ch);
 						}
 						else {
-							editor.replaceRange('', {'line': cursor.line - 1, 'ch': editor.getLine(cursor.line - 1).length}, {'line': cursor.line, 'ch': cursor.ch});
-							editor.setCursor({'line': cursor.line - 1, 'ch': 0});
-					        routine(editor, this);
+							editor.replaceRange('', {'line': cursor.line - (byEnter ? 1 : 0), 'ch': editor.getLine(cursor.line - (byEnter ? 1 : 0)).length}, {'line': cursor.line, 'ch': cursor.ch});
+							editor.setCursor({'line': cursor.line - (byEnter ? 1 : 0), 'ch': 0});
+							this.statusBarItemEl.setText('⬜');
+					        routine(this, byEnter, ch);
 					    }
-			        }
-			        else
-			        	routine(editor, this);
+					}
+					else {
+						this.statusBarItemEl.setText('⬜');
+						routine(this, byEnter, ch);
+					}
 				}
 			}
 		});
@@ -200,28 +200,15 @@ export default class InteractivityPlugin extends Plugin {
 					if (typeof this.allSubprocesses[file] !== "undefined") {
 						if (this.advanced) {
 							try {
-								this.allSubprocesses[file].stdin.write('\'%kill_routine%\'\n' + this.settings.executeOnUnload + '\n');
+								this.allSubprocesses[file].kill();
+								delete this.allSubprocesses[file];
 							}
 							catch(e) { }
-							setTimeout((that) => {
-								try {
-									that.allSubprocesses[file].kill();
-									delete that.allSubprocesses[file];
-								}
-								catch(e) { }
-							}, 300, this);
 						}
-						// else {
-						// 	if (this.settings.executeOnUnload)
-						// 		try {
-						// 			__EVAL(this.settings.executeOnUnload); // output is not needed
-						// 		}
-						// 		catch(e) { }
-						// }
 					}
 				}
 				// Wait 350ms for subprocess to start up
-				setTimeout((that) => {
+				setTimeout((that: InteractivityPlugin) => {
 					that.warmup(editor, view);
 				}, this.warmupOnly ? 0 : 350, this);
 			}
@@ -230,24 +217,27 @@ export default class InteractivityPlugin extends Plugin {
 		// Add the icon to the panel
 		const ribbonIconEl = this.addRibbonIcon('activity', 'Run Interactivity', (evt: MouseEvent) => {
 			this.app['commands'].executeCommandById('interactivity:interactivity-execute');
+			this.app.workspace.activeEditor.editor.focus()
 		});
 
+		// Add running status
+		this.statusBarItemEl = this.addStatusBarItem();
+		this.statusBarItemEl.setText('🟩');
+
+		this.warmupOnly = true;
+		this.app['commands'].executeCommandById('interactivity:interactivity-restart');
+		this.warmupOnly = false;
 	}
 
 	onunload() {
 		Object.entries(this.allSubprocesses).forEach(([file, s]) => {
 			if (typeof this.allSubprocesses[file] !== "undefined") {
 				if (this.advanced) {
-					this.allSubprocesses[file].stdin.write('\'%kill_routine%\'\n' + (this.settings.executeOnUnload ? this.settings.executeOnUnload + '\n' : ''));
-
-					// Wait 350ms for subprocess to shut down
-					setTimeout((that) => {
-						try {
-							that.allSubprocesses[file].kill();
-							delete that.allSubprocesses[file];
-						}
-						catch(e) { }
-					}, 350, this);
+					try {
+						this.allSubprocesses[file].kill();
+						delete this.allSubprocesses[file];
+					}
+					catch(e) { }
 				}
 				else {
 					if (this.settings.executeOnUnload)
@@ -286,15 +276,15 @@ export default class InteractivityPlugin extends Plugin {
 					return;
 				}
 				const p = normalizePath(this.app.vault['adapter']['basePath'] + '/' + this.app.vault['configDir'] + '/plugins/interactivity/1').slice(0, -1);
-				const params = this.settings.shellParams ? this.settings.shellParams.replace('##plugin##', p).split('\n') : [];
+				const params = this.settings.shellParams ? this.settings.shellParams.replaceAll('##plugin##', p).split('\n') : [];
 				let enviromentVariables = {};
-				this.settings.enviromentVariables.replace('##plugin##', p).split('\n').forEach((line) => {
+				this.settings.enviromentVariables.replaceAll('##plugin##', p).split('\n').forEach((line) => {
 					const lines = line.split('=');
 					if (lines.length > 1)
 						enviromentVariables[lines[0]] = lines[1];
 				});
 
-				this.allSubprocesses[file] = cp.spawn(this.settings.shellExec.replace('##plugin##', p), params, {env: enviromentVariables});
+				this.allSubprocesses[file] = cp.spawn(this.settings.shellExec.replaceAll('##plugin##', p), params, {env: enviromentVariables});
 
 				this.allSubprocesses[file].stdin.setEncoding('utf-8');
 				this.allSubprocesses[file].stdout.setEncoding('utf-8');
@@ -304,28 +294,19 @@ export default class InteractivityPlugin extends Plugin {
 					this.allSubprocesses[file].stdin.write(this.settings.executeOnLoad + '\n');
 
 				let stringsOmitted = 0;
-				let stdin_flag = true;
-				const insertText = this.insertText;
-				const stdin = this.allSubprocesses[file].stdin;
-				const omitStrings = this.settings.omitStrings;
-				const toNotice = this.settings.notice;
-				const prependOutput = this.settings.prependOutput;
-				const regexpCleaner = this.settings.regexpCleaner;
-				const decorateMultiline = this.settings.decorateMultiline;
-				const advanced = this.advanced;
-				const removeLine = this.removeLine;
+				const that = this;
+				const workspace = this.app.workspace;
 
 				let process = function(data) {
-					if (stringsOmitted < omitStrings && advanced) {
+					if (stringsOmitted < that.settings.omitStrings && that.advanced) {
 						stringsOmitted++;
 						return;
 					}
-					data = data.replace(new RegExp(regexpCleaner, 'mg'), '');
-					if (data.search('\'%kill_routine%\'') == 0) {
-						stdin.end();
-						stdin_flag = false;
-					} else if (data.length && stdin_flag !== false)
-						insertText(editor, data, decorateMultiline, prependOutput, toNotice, advanced, removeLine);
+					data = data.replaceAll(new RegExp(that.settings.regexpCleaner, 'mg'), '');
+					if (data.length && that.processingNote === that.app.workspace.getActiveFile().path) {
+						that.insertText(workspace.activeEditor.editor, data, that.settings.decorateMultiline, that.settings.prependOutput, that.settings.notice, that.advanced, that.removeLine);
+						that.statusBarItemEl.setText('🟩');
+					}
 				};
 
 				this.allSubprocesses[file].stdout.on("data", process);
@@ -342,12 +323,11 @@ export default class InteractivityPlugin extends Plugin {
 			new Notice(data);
 		else {
 			const outLines = (data.match(/\n/gm) || []).length + 1;
+
+			data = data.replaceAll(/\r/mg, '');
 			if (decorateMultiline)
-				data = data.replace(/(?<!\\)\n(?!$)/mg, '\n' + prependOutput);
-			if (!advanced)
-				data = '\n' + data;
+				data = data.replaceAll(/(?<!\\)\n(?!\n*$)/g, '\n' + prependOutput);
 			editor.replaceRange('\n' + prependOutput + data.replace(/\n$/mg, ''), editor.getCursor());
-			removeLine(editor, editor.getCursor().line + outLines);
 			editor.setCursor({'line': editor.getCursor().line + outLines - (advanced ? 1 : 0), 'ch': editor.getLine(editor.getCursor().line + outLines - (advanced ? 1 : 0)).length});
 		}
 	}
@@ -374,7 +354,6 @@ class InteractivitySettingTab extends PluginSettingTab {
 	}
 
 	hide(): void {
-		this.app['commands'].executeCommandById('interactivity:interactivity-execute');
 		this.plugin.modal = false;
 	}
 
@@ -392,38 +371,6 @@ class InteractivitySettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.notice)
 				.onChange(async (value) => {
 					this.plugin.settings.notice = value;
-					await this.plugin.saveSettings();
-				}));
-
-	    new Setting(containerEl)
-			.setName('Execute by pressing Enter key (use Shift+Enter to insert new lines if needed)')
-			.setDesc('You will still be able to directly call the plugin\'s command (e.g. by using hotkeys)')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.byEnter)
-				.onChange(async (value) => {
-					this.plugin.settings.byEnter = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Do not execute by pressing the Enter key if the keyword is not found in the current Obsidian note')
-			.setDesc('You will still be able to directly call the plugin\'s command (e.g. by using hotkeys)')
-			.addText(text => text
-				.setPlaceholder('RegExp pattern')
-				.setValue(this.plugin.settings.documentKeyword)
-				.onChange(async (value) => {
-					this.plugin.settings.documentKeyword = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Do not execute by pressing the Enter key if the keyword is not found in the current line')
-			.setDesc('You will still be able to directly call the plugin\'s command (e.g. by using hotkeys)')
-			.addText(text => text
-				.setPlaceholder('RegExp pattern')
-				.setValue(this.plugin.settings.lineKeyword)
-				.onChange(async (value) => {
-					this.plugin.settings.lineKeyword = value;
 					await this.plugin.saveSettings();
 				}));
 
@@ -446,6 +393,18 @@ class InteractivitySettingTab extends PluginSettingTab {
 					this.plugin.settings.decorateMultiline = value;
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+			.setName('Text shortcuts that run commands')
+			.setDesc('The first part before \'->\' is a shortcut to be found in the editor at the beginning of a line, the second part is the command to be executed. Use ##param## template to pass the line after shortcut into the command. Press Shift+Enter to get a new line without calling a shortcut.')
+			.addTextArea(text => text
+				.setPlaceholder('shortcut->command(##param##)')
+				.setValue(this.plugin.settings.shortcuts)
+				.onChange(async (value) => {
+					this.plugin.settings.shortcuts = value;
+					await this.plugin.saveSettings();
+				}));
+
 
 		if (!this.app.isMobile) {
 		    new Setting(containerEl)
