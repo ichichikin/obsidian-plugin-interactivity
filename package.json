@@ -1,6 +1,6 @@
 {
   "name": "Interactivity",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Run everything inside your notes",
   "main": "main.js",
   "dependencies": {
@@ -149,7 +149,7 @@
     "es6-set": "^0.1.6",
     "es6-symbol": "^3.1.3",
     "es6-weak-map": "^2.0.3",
-    "esbuild": "^0.17.18",
+    "esbuild": "^0.17.19",
     "escape-string-regexp": "^4.0.0",
     "escope": "^3.6.0",
     "eslint-scope": "^5.1.1",
