@@ -326,7 +326,7 @@ export default class InteractivityPlugin extends Plugin {
 
 			data = data.replaceAll(/\r/mg, '');
 			if (decorateMultiline)
-				data = data.replaceAll(/(?<!\\)\n(?!\n*$)/g, '\n' + prependOutput);
+				data = data.replaceAll(/(^|[^\\])\n(?!\n*$)/g, (match, p1) => p1 + '\n' + prependOutput);
 			editor.replaceRange('\n' + prependOutput + data.replace(/\n$/mg, ''), editor.getCursor());
 			editor.setCursor({'line': editor.getCursor().line + outLines - (advanced ? 1 : 0), 'ch': editor.getLine(editor.getCursor().line + outLines - (advanced ? 1 : 0)).length});
 		}

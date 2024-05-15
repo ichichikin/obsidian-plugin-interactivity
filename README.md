@@ -1,12 +1,21 @@
 # Interactivity Plugin for Obsidian
 
-The Interactivity plugin allows you to run any executables inside your Obsidian notes. By default, it supports running JavaScript, but you can also configure it to run Python or other shell commands. This plugin is perfect for integrating powerful scripts directly into your note-taking workflow.
+Sometimes you need to compute numbers or access data while writing your notes. I found it handy to be able to do this without leaving the Obsidian workspace.
+Say you need to quickly calculate a project's budget while taking notes. You just type the numbers and hit Enter in your Obsidian note:
+```plaintext
+## Mike's rate is $120. Thus, it will cost us:
+@120*21*12+8000
+38240
+```
+
+This plugin allows you to seamlessly run shell commands and scripts directly within your notes, providing their output right alongside your written content, enhancing your productivity and making your note-taking process more dynamic and interactive. Whether you're running quick calculations, querying data, or integrating complex scripts, this plugin brings powerful functionality right into your Obsidian workspace.
+By default, it supports running JavaScript, but you can also configure it to run Python or other shell commands. This plugin is perfect for integrating powerful scripts directly into your note-taking workflow.
 
 You can trigger shell execution in two ways:
 
-1. Text Pattern from Notes: Define specific text patterns in your notes that, when encountered, will trigger the execution of the associated command. For example, you can use shortcuts like `@` to run commands directly from your notes.
+1. Text Patterns from Notes: Define specific text patterns in your notes that will trigger shell execution when encountered. For example, you can use shortcuts like @2+2 to execute the calculation directly within your note.
 
-2. Hotkey: Assign a hotkey to run predefined commands. This allows you to execute commands without typing them into your notes. Simply press the designated hotkey to run the command instantly.
+2. Hotkeys: Assign a hotkey to run commands. This allows you to execute code without typing any shortcuts. Simply select the part of the text you want to execute and press the designated hotkey.
 
 ## Features
 
@@ -42,20 +51,20 @@ These options are available only on the desktop version of Obsidian:
 - **Apply a RegExp pattern to filter the output:** Apply a RegExp pattern to filter the output.
 - **Specify the number of initial lines to skip:** Specify the number of initial lines to skip (e.g., shell greetings).
 
-## Use Case: Complex Math Calculations
+## Use Case: Math Calculations
 
 With the Interactivity plugin, you can perform complex math calculations directly within your Obsidian notes. For example, you can use the default JavaScript interpreter to calculate mathematical expressions:
 
 ```plaintext
-@(10 + 365) / Math.E
-137.9547904392909
+@200 % (10 + 365) / Math.E
+73.57588823428847
 ```
 
 For more complex calculations, you can write and run JavaScript functions, or if you enable advanced options, you can use Python or other scripting languages to leverage powerful libraries for mathematical computations.
 
-## Use Case: Python Integration
+## Use Case: Using Python in your notes
 
-This plugin includes a sample Python script (`modules/chat.py`) that demonstrates how to chat with ChatGPT directly from within Obsidian. You can enhance the functionality by adding custom Python scripts to the `modules` directory within the plugin's directory. All global functions and variables in these scripts will be accessible from the plugin.
+You can also perform any tasks with Python, including calculations like the ones above. On top of that, this plugin includes a sample Python script (`modules/chat.py`) that demonstrates how to chat with ChatGPT directly from within Obsidian. You can enhance the functionality by adding custom Python scripts to the `modules` directory within the plugin's directory. All global functions and variables in these scripts will be accessible from the plugin.
 
 ### Installing Python
 
@@ -163,7 +172,20 @@ You can iterate both shortcuts by dividing them with a new line in your Obsidian
 @@ -> print(chat(r"""##param##""", system='Use markdown and emojis.', save_context=True, model='gpt-4o') + '\n')
 ```
 
-This allows you to define multiple shortcuts for different commands, enhancing your ability to run various functions directly from your notes.
+When all is set up, you can call Python code from your Obsidian notes:
+
+```plaintext
+@import numpy as np
+@200 % (10 + 365) / np.e
+73.57588823428847
+
+@chat('How are you doing?')
+'I\'m doing well, thanks for asking! How about you? What\'s on your mind today?'
+
+@@How are you doing?
+I'm doing well, thank you for asking! How about you? How's your day going?
+```
+
 
 ## Contributing
 
