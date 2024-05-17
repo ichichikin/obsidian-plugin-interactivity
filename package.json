@@ -1,6 +1,6 @@
 {
-	"name": "Interactivity",
-	"version": "0.0.3",
+	"name": "Interactivity: Calculations and Scripts",
+	"version": "0.0.4",
 	"description": "Interactivity allows you to run shell commands and scripts directly within your notes, providing their output right alongside your written content, making your note-taking process more dynamic and interactive.",
 	"main": "main.js",
 	"scripts": {

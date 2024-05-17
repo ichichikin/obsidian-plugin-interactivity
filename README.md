@@ -1,4 +1,4 @@
-# Interactivity Plugin for Obsidian
+# Interactivity: Calculations and Scripts for Obsidian
 
 Sometimes you need to compute numbers or access data while writing your notes. It's handy to do this without leaving the [Obsidian](https://github.com/obsidianmd/obsidian-releases) workspace, using your favorite tools like Python, Perl, Node.js, or others.
 For example, if you need to quickly calculate a project's budget while taking notes, you can type the numbers and hit Enter in your Obsidian note to execute the code in the desired REPL:
@@ -19,14 +19,19 @@ You can trigger shell execution in two ways:
 
 ## Installation
 
-1. Download and extract the plugin files into your Obsidian plugins directory.
-2. Enable the Interactivity plugin from the Obsidian settings.
+1. Open Obsidian.
+2. Go to Settings > Community plugins.
+3. Click on Browse and search for "Interactivity: Calculations and Scripts".
+4. Click on the plugin and then click Install.
+5. After installation, click on Enable to activate the plugin.
 
-## Python modules collection
+Once the plugin is enabled, you can configure it via the plugin settings in Obsidian.
 
-My favorite daily tool is Python. This plugin includes several essential modules that enhance productivity while working in Obsidian.
+## Python Modules Collection
 
-- **chat.py** Integrates ChatGPT directly into your notes.
+My favorite daily tool is Python, which is why I included several sample Python modules in this plugin.
+
+- **chat.py** Integrates ChatGPT directly into your notes. Remember to [set up an OpenAI API key](#commands-to-run-after-starting-the-shell).
 - **tables.py** Imports Excel and CSV tables into your notes.
 - **plots.py** Embeds matplotlib plots directly into your notes for quick visual data representation.
 
@@ -37,6 +42,55 @@ You can intall them with this command: `pip install matplotlib openai pandas tab
 Here's a demo of how they work:
 
 <img src="demo.gif" alt="Demo" style="width:100%;"/>
+
+### Available Functions in the Modules within Obsidian
+
+#### `plots.py`
+
+1. **chat(prompt: str, system: str = None, save_context: bool = True, model: str = 'gpt-3.5-turbo') -> None:**
+   - **Parameters:**
+     - `prompt` (str): The user query to be sent to ChatGPT.
+     - `system` (str, optional): An optional system prompt.
+     - `save_context` (bool, optional): Whether to save the chat context for continuity. Default is `True`.
+     - `model` (str, optional): The model to be used for the chat. Default is `'gpt-3.5-turbo'`.
+   - **Output:** Prints the assistant's response directly in the note.
+
+2. **chat4(prompt: str, system: str = None, save_context: bool = True) -> None:**
+   - **Parameters:**
+     - `prompt` (str): The user query to be sent to ChatGPT 4o.
+     - `system` (str, optional): An optional system prompt.
+     - `save_context` (bool, optional): Whether to save the chat context for continuity. Default is `True`.
+   - **Output:** Prints the assistant's response directly in the note.
+
+3. **clean_chat() -> None:**
+   - **Output:** Cleans the chat history by resetting the stored messages. This function does not produce a direct output in the notes.
+
+#### `plots.py`
+
+1. **plot(\*args, \*\*kwargs) -> None:**
+   - **Parameters:**
+     - `*args`: Optional positional arguments to be passed to the `matplotlib.pyplot.plot` function.
+     - `**kwargs`: Optional keyword arguments to be passed to the `matplotlib.pyplot.plot` function.
+   - **Output:** Creates and embeds a plot in your note. The plot is displayed as a base64-encoded PNG image embedded in markdown format.
+
+#### `tables.py`
+
+1. **excel_table(path: str, \*args, \*\*kwargs) -> None:**
+   - **Parameters:**
+     - `path` (str): The path to the Excel file.
+     - `*args`: Optional additional positional arguments to be passed to `pandas.read_excel`.
+     - `**kwargs`: Optional additional keyword arguments to be passed to `pandas.read_excel`.
+   - **Output:** Reads the Excel file and prints it as a markdown table directly in your note.
+
+2. **csv_table(path: str, \*args, \*\*kwargs) -> None:**
+   - **Parameters:**
+     - `path` (str): The path to the CSV file.
+     - `*args`: Optional additional positional arguments to be passed to `pandas.read_csv`.
+     - `**kwargs`: Optional additional keyword arguments to be passed to `pandas.read_csv`.
+   - **Output:** Reads the CSV file and prints it as a markdown table directly in your note.
+
+### Custom functions
+You can add your custom Python scripts to the `py_modules` directory within the plugin's directory. All global functions and variables in these scripts will be accessible within Obsidian. You are welcome to contribute new useful scripts in your favorite language.
 
 ## Configuration
 
@@ -62,7 +116,7 @@ These options are available only on the desktop version of Obsidian:
 - **Specify the number of initial lines to suppress:** Specify the number of initial lines to skip (e.g., shell greetings).
 
 ## Setting up Python integration
-You can enhance the functionality by adding custom Python scripts to the `py_modules` directory within the plugin's directory. All global functions and variables in these scripts will be accessible from the plugin.
+You can enhance the functionality by adding custom Python scripts to the `py_modules` directory within the plugin's directory. All global functions and variables in these scripts will be accessible within Obsidian.
 
 ### Installing Python
 
@@ -78,7 +132,7 @@ To find the Python executable path, run the following command in your terminal:
 which python3
 ```
 
-Use the output of this command as the path in the `Shell executable path setting`.
+Use the output of this command as the path in the `Shell executable path` setting.
 
 Next, you should configure the plugin's settings in Obsidian.
 
@@ -131,8 +185,6 @@ exit()
 
 Define text shortcuts to run specific commands with the `Text shortcuts that run commands` setting. The text before '->' is the shortcut; the text after is the command to execute. Use `##param##` to include the line after the shortcut in the command. Press `Shift+Enter` for a new line without triggering the shortcut.
 
-Here are examples for using `chat.py`:
-
 #### Example 1
 
 ```plaintext
@@ -181,6 +233,20 @@ I'm doing well, thanks for asking! How about you? What's on your mind today?
 @@How are you doing?
 I'm doing well, thank you for asking! How about you? How's your day going?
 ```
+
+## JavaScript Advanced Shortcuts
+
+Even if you're not using the `Advanced options` (for example, if you're on the mobile version of Obsidian), you can still tackle complex tasks with pure JavaScript. Here's an example of a sophisticated shortcut for your `Text shortcuts that run commands` setting that allows you to interact with ChatGPT:
+
+```plaintext
+@@ -> const apiKey = 'OPENAI_API_KEY';if(typeof context==='undefined'){var context=[{role:'system',content:'Use markdown and emojis.'}];}async function communicateWithChatGPT(message){context.push({role:'user',content:message});try{const response=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},body:JSON.stringify({model:'gpt-4o',messages:context})});const data=await response.json();if(data.choices&&data.choices.length>0){const assistantMessage=data.choices[0].message;context.push(assistantMessage);return assistantMessage.content;}else{throw new Error('No response from the API');}}catch(error){console.error('Error communicating with ChatGPT:',error);return error;}}(async()=>{cur=this.app.workspace.activeEditor.editor.getCursor();cur.line++;cur.ch=0;try{const ret=await communicateWithChatGPT(`##param##`);this.app.workspace.activeEditor.editor.replaceRange(ret,cur);}catch(error){this.app.workspace.activeEditor.editor.replaceRange('Error: '+error);}})();'';
+```
+
+Please note that the script is written in a single line. Don't forget to set your OpenAI API key with the `apiKey` variable.
+
+## If You Also Use Sublime Text
+
+Check out the [Interactivity: Calculations and Scripts for Sublime Text](https://github.com/ichichikin/sublime-plugin-interactivity).
 
 ## Contributing
 
