@@ -22,13 +22,18 @@ pip install openpyxl tabulate
 
 # prints an Excel table
 def excel_table(path: str, *args, **kwargs) -> None:
-    df = pd.read_excel(path, *args, **kwargs)
-    markdown_table = tabulate(df, headers='keys', tablefmt='pipe')
-    print(f'\n{markdown_table}\n')
-
+	try:
+		df = pd.read_excel(path, *args, **kwargs)
+		markdown_table = tabulate(df, headers='keys', tablefmt='pipe')
+		print(f'\n{markdown_table}\n')
+	except:
+		print('Unable to load the table\n')
 
 # prints a CSV table
 def csv_table(path: str, *args, **kwargs) -> None:
-    df = pd.read_csv(path, *args, **kwargs)
-    markdown_table = tabulate(df, headers='keys', tablefmt='pipe')
-    print(f'\n{markdown_table}\n')
+	try:
+		df = pd.read_csv(path, *args, **kwargs)
+		markdown_table = tabulate(df, headers='keys', tablefmt='pipe')
+		print(f'\n{markdown_table}\n')
+	except:
+		print('Unable to load the table\n')
