@@ -26,13 +26,13 @@ const DEFAULT_SETTINGS: InteractivityPluginSettings = {
 	separatedShells: false,
 	prependOutput: '>>> ',
 	enviromentVariables: "PYTHONIOENCODING=utf8\n",
-	executeOnUnload: "save()\nexit()\n",
+	executeOnUnload: "exit()\n",
 	regexpCleaner: '^((>>> )|(\.\.\. ))+',
-	shortcuts: '@ -> ##param##',
+	shortcuts: '@ -> ##param##\n',
 	advanced: false
 }
 
-const __EVAL = (s: string) => eval(`void (__EVAL = ${__EVAL.toString()}); ${s}`);
+const __EVAL = (s: string) => (0, eval)(`void (__EVAL = ${__EVAL.toString()}); ${s}`);
 
 export default class InteractivityPlugin extends Plugin {
 	settings: InteractivityPluginSettings;
@@ -136,7 +136,7 @@ export default class InteractivityPlugin extends Plugin {
 								}
 								if (typeof output !== 'undefined' && that.processingNote === that.app.workspace.getActiveFile()?.path) {
 									that.insertText(editor, output.toString(), that.settings.decorateMultiline, that.settings.prependOutput, that.settings.notice, that.advanced, that.removeLine);
-									that.statusBarItemEl.setText('🟩');
+									that.statusBarItemEl.setText('');
 								}
 							}
 						}
@@ -161,7 +161,7 @@ export default class InteractivityPlugin extends Plugin {
 						if (Platform.isMobile) {
 							setTimeout((that: InteractivityPlugin, byEnter: boolean) => {
 								editor.setCursor({ 'line': cursor.line - (byEnter ? 1 : 0), 'ch': editor.getLine(cursor.line - (byEnter ? 1 : 0)).length });
-								that.statusBarItemEl.setText('⬜');
+								that.statusBarItemEl.setText('Interactivity is busy⏳');
 								routine(that, byEnter, ch);
 								that.app.workspace.activeEditor?.editor?.setCursor({ 'line': cursor.line, 'ch': editor.getLine(cursor.line).length });
 							}, 0, this, byEnter);
@@ -169,12 +169,12 @@ export default class InteractivityPlugin extends Plugin {
 						else {
 							editor.replaceRange('', { 'line': cursor.line - (byEnter ? 1 : 0), 'ch': editor.getLine(cursor.line - (byEnter ? 1 : 0)).length }, { 'line': cursor.line, 'ch': cursor.ch });
 							editor.setCursor({ 'line': cursor.line - (byEnter ? 1 : 0), 'ch': 0 });
-							this.statusBarItemEl.setText('⬜');
+							this.statusBarItemEl.setText('Interactivity is busy⏳');
 							routine(this, byEnter, ch);
 						}
 					}
 					else {
-						this.statusBarItemEl.setText('⬜');
+						this.statusBarItemEl.setText('Interactivity is busy⏳');
 						routine(this, byEnter, ch);
 					}
 				}
@@ -191,6 +191,11 @@ export default class InteractivityPlugin extends Plugin {
 					if (typeof this.allSubprocesses[file] !== "undefined") {
 						if (this.advanced) {
 							try {
+								try {
+									if (this.settings.executeOnUnload)
+										this.allSubprocesses[file].stdin.write(this.settings.executeOnUnload + '\n');
+								}
+								catch (e) { }
 								this.allSubprocesses[file].kill();
 								delete this.allSubprocesses[file];
 							}
@@ -213,7 +218,7 @@ export default class InteractivityPlugin extends Plugin {
 
 		// Add running status
 		this.statusBarItemEl = this.addStatusBarItem();
-		this.statusBarItemEl.setText('🟩');
+		this.statusBarItemEl.setText('');
 
 		this.warmupOnly = true;
 		(this.app as any).commands.executeCommandById('interactivity:restart');
@@ -225,17 +230,15 @@ export default class InteractivityPlugin extends Plugin {
 			if (typeof this.allSubprocesses[file] !== "undefined") {
 				if (this.advanced) {
 					try {
+						try {
+							if (this.settings.executeOnUnload)
+								this.allSubprocesses[file].stdin.write(this.settings.executeOnUnload + '\n');
+						}
+						catch (e) { }
 						this.allSubprocesses[file].kill();
 						delete this.allSubprocesses[file];
 					}
 					catch (e) { }
-				}
-				else {
-					if (this.settings.executeOnUnload)
-						try {
-							__EVAL(this.settings.executeOnUnload); // output is not needed
-						}
-						catch (e) { }
 				}
 			}
 		});
@@ -297,7 +300,7 @@ export default class InteractivityPlugin extends Plugin {
 					if (data.length && that.processingNote === that.app.workspace.getActiveFile()?.path) {
 						if (workspace.activeEditor?.editor)
 							that.insertText(workspace.activeEditor.editor, data, that.settings.decorateMultiline, that.settings.prependOutput, that.settings.notice, that.advanced, that.removeLine);
-						that.statusBarItemEl.setText('🟩');
+						that.statusBarItemEl.setText('');
 					}
 				};
 
@@ -355,7 +358,6 @@ class InteractivitySettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		containerEl.empty();
-		containerEl.createEl('h2', { text: 'Settings' });
 
 		new Setting(containerEl)
 			.setName('Use notifications instead of appending the output to the Obsidian notes')
@@ -408,14 +410,25 @@ class InteractivitySettingTab extends PluginSettingTab {
 						this.plugin.settings.advanced = value;
 						await this.plugin.saveSettings();
 
-						shellExecEl.settingEl.style['display'] = value ? 'flex' : 'none';
-						enviromentVariablesEl.settingEl.style['display'] = value ? 'flex' : 'none';
-						shellParamsEl.settingEl.style['display'] = value ? 'flex' : 'none';
-						executeOnLoadEl.settingEl.style['display'] = value ? 'flex' : 'none';
-						executeOnUnloadEl.settingEl.style['display'] = value ? 'flex' : 'none';
-						separatedShellsEl.settingEl.style['display'] = value ? 'flex' : 'none';
-						regexpCleanerEl.settingEl.style['display'] = value ? 'flex' : 'none';
-						linesToSuppressEl.settingEl.style['display'] = value ? 'flex' : 'none';
+						if (this.plugin.settings.advanced) {
+						    shellExecEl.settingEl.removeClass('hidden');
+						    enviromentVariablesEl.settingEl.removeClass('hidden');
+						    shellParamsEl.settingEl.removeClass('hidden');
+						    executeOnLoadEl.settingEl.removeClass('hidden');
+						    executeOnUnloadEl.settingEl.removeClass('hidden');
+						    separatedShellsEl.settingEl.removeClass('hidden');
+						    regexpCleanerEl.settingEl.removeClass('hidden');
+						    linesToSuppressEl.settingEl.removeClass('hidden');
+						} else {
+						    shellExecEl.settingEl.addClass('hidden');
+						    enviromentVariablesEl.settingEl.addClass('hidden');
+						    shellParamsEl.settingEl.addClass('hidden');
+						    executeOnLoadEl.settingEl.addClass('hidden');
+						    executeOnUnloadEl.settingEl.addClass('hidden');
+						    separatedShellsEl.settingEl.addClass('hidden');
+						    regexpCleanerEl.settingEl.addClass('hidden');
+						    linesToSuppressEl.settingEl.addClass('hidden');
+						}
 					}));
 
 			// Advanced options
@@ -505,14 +518,25 @@ class InteractivitySettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}));
 
-			shellExecEl.settingEl.style['display'] = this.plugin.settings.advanced ? 'flex' : 'none';
-			enviromentVariablesEl.settingEl.style['display'] = this.plugin.settings.advanced ? 'flex' : 'none';
-			shellParamsEl.settingEl.style['display'] = this.plugin.settings.advanced ? 'flex' : 'none';
-			executeOnLoadEl.settingEl.style['display'] = this.plugin.settings.advanced ? 'flex' : 'none';
-			executeOnUnloadEl.settingEl.style['display'] = this.plugin.settings.advanced ? 'flex' : 'none';
-			separatedShellsEl.settingEl.style['display'] = this.plugin.settings.advanced ? 'flex' : 'none';
-			regexpCleanerEl.settingEl.style['display'] = this.plugin.settings.advanced ? 'flex' : 'none';
-			linesToSuppressEl.settingEl.style['display'] = this.plugin.settings.advanced ? 'flex' : 'none';
+			if (this.plugin.settings.advanced) {
+			    shellExecEl.settingEl.removeClass('hidden');
+			    enviromentVariablesEl.settingEl.removeClass('hidden');
+			    shellParamsEl.settingEl.removeClass('hidden');
+			    executeOnLoadEl.settingEl.removeClass('hidden');
+			    executeOnUnloadEl.settingEl.removeClass('hidden');
+			    separatedShellsEl.settingEl.removeClass('hidden');
+			    regexpCleanerEl.settingEl.removeClass('hidden');
+			    linesToSuppressEl.settingEl.removeClass('hidden');
+			} else {
+			    shellExecEl.settingEl.addClass('hidden');
+			    enviromentVariablesEl.settingEl.addClass('hidden');
+			    shellParamsEl.settingEl.addClass('hidden');
+			    executeOnLoadEl.settingEl.addClass('hidden');
+			    executeOnUnloadEl.settingEl.addClass('hidden');
+			    separatedShellsEl.settingEl.addClass('hidden');
+			    regexpCleanerEl.settingEl.addClass('hidden');
+			    linesToSuppressEl.settingEl.addClass('hidden');
+			}
 		}
 	}
 }
