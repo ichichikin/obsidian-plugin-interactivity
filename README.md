@@ -36,7 +36,7 @@ You can intall them with this command: `pip install matplotlib openai pandas tab
 
 Here's a demo of how they work:
 
-<img src="demo.gif" alt="Demo" style="width:600px;"/>
+<img src="demo.gif" alt="Demo" style="width:100%;"/>
 
 ## Configuration
 
