@@ -1,10 +1,10 @@
 {
 	"author": "ichichikin",
-	"authorUrl": "",
-	"description": "The Interactivity plugin allows you to run any executables inside your Obsidian notes.",
+	"authorUrl": "https://github.com/ichichikin/",
+	"description": "Interactivity allows you to run shell commands and scripts directly within your notes, providing their output right alongside your written content, making your note-taking process more dynamic and interactive.",
 	"id": "interactivity",
 	"isDesktopOnly": false,
-	"minAppVersion": "0.12.17",
+	"minAppVersion": "1.5.3",
 	"name": "Interactivity",
-	"version": "0.0.2"
+	"version": "0.0.3"
 }

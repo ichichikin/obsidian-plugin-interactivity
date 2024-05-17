@@ -1,14 +1,11 @@
+# This file is a part of Obsidian's Interactivity plugin
+
 import os
 import time
 import logging
 import sys
 import types
-from modules import *
-
-# handy libraries
-import numpy as np
-import pandas as pd
-import random
+from py_modules import *
 
 
 debug_info = False
@@ -50,7 +47,7 @@ if __name__ == '__main__':
         for n, t in list(globals().items()):
             if isinstance(t, types.FunctionType) and not n.startswith('__'):
                 available_objects.append(n)
-            if isinstance(t, types.ModuleType) and t.__package__ == 'modules':
+            if isinstance(t, types.ModuleType) and t.__package__ == 'py_modules':
                 for x in dir(t):
                     v = getattr(t, x)
                     if not x.startswith('__'):

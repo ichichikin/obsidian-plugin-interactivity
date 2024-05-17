@@ -1,17 +1,30 @@
-import openai
+# This file is a part of Obsidian's Interactivity plugin
+
+try:
+    import openai
+except ImportError:
+    print("""
+The openai library is required to run chat.py.
+You can install it using pip:
+pip install openai
+""")
+    exit(1)
 import re
 
 
 __chat_messages = []
 
 
-# returns ChatGPT 4 response on a query
-def chat4(prompt: str, system: str = None, save_context: bool = False) -> str:
-    return chat(prompt, system, save_context, 'gpt-4o')
+# sends the query to ChatGPT 4o
+def chat4(prompt: str, system: str = None, save_context: bool = True) -> None:
+    chat(prompt, system, save_context, 'gpt-4o')
 
 
-# returns ChatGPT response on a query
-def chat(prompt: str, system: str = None, save_context: bool = False, model: str = 'gpt-3.5-turbo') -> str:
+# sends the query to ChatGPT
+def chat(prompt: str, system: str = None, save_context: bool = True, model: str = 'gpt-3.5-turbo') -> None:
+    if openai.api_key is None:
+        print("You need to setup the OpenAI API key first")
+        exit(1)
     global __chat_messages
     msg = []
     if system:
@@ -31,7 +44,7 @@ def chat(prompt: str, system: str = None, save_context: bool = False, model: str
 
     if save_context:
         __chat_messages += [{"role": "user", "content": prompt}, {"role": "assistant", "content": completion.choices[0].message.content}]
-    return completion.choices[0].message.content
+    print(completion.choices[0].message.content + '\n')
 
 
 # cleans chat history
