@@ -1,5 +1,7 @@
 # Interactivity: Calculations and Scripts for Obsidian
 
+**[Feel free to ask any questions about the plugin on the Obsidian forum!](https://forum.obsidian.md/t/calculations-and-scripts-execution-in-your-notes-interactivity-plugin-release/82265)**
+
 Sometimes you need to compute numbers or access data while writing your notes. It's handy to do this without leaving the [Obsidian](https://github.com/obsidianmd/obsidian-releases) workspace, using your favorite tools like Python, Perl, Node.js, or others.
 For example, if you need to quickly calculate a project's budget while taking notes, you can type the numbers and hit Enter in your Obsidian note to execute the code in the desired REPL:
 ```plaintext
@@ -203,7 +205,7 @@ This setup allows you to directly execute the input text as a command.
 ```
 
 - `@@`: This is the shortcut you type at the beginning of a line in your Obsidian note.
-- `chat4(r"""##param## """, system='Use markdown and emojis.')`: This command calls the `chat` function from `chat.py` with specific parameters.
+- `chat4(r"""##param## """, system='Use markdown and emojis.')`: This command calls the `chat4` function from `chat.py` with specific parameters.
 
 Let's break down the parameters:
 - `r"""##param##"""`: This includes the text that follows the shortcut on the same line.
