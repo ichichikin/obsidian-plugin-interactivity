@@ -2,16 +2,17 @@
 
 **[Feel free to ask any questions about the plugin on the Obsidian forum!](https://forum.obsidian.md/t/calculations-and-scripts-execution-in-your-notes-interactivity-plugin-release/82265)**
 
-Sometimes you need to compute numbers or access data while writing your notes. It's handy to do this without leaving the [Obsidian](https://github.com/obsidianmd/obsidian-releases) workspace, using your favorite tools like Python, Perl, Node.js, or others.
+Interactivity lets you run local shell commands and scripts directly within your Obsidian notes, providing the output alongside your written content. Use your favorite tools like Python, Node.js, Java, Perl, PHP, bash, or any other REPLs directly from Obsidian.
+
 For example, if you need to quickly calculate a project's budget while taking notes, you can type the numbers and hit Enter in your Obsidian note to execute the code in the desired REPL:
-```plaintext
+```markdown
 ## Mike's rate is $120. Thus, it will cost us:
+
 @120*8*21*12+8000
 249920
 ```
 
-This plugin allows you to run shell commands and scripts directly within your notes, providing their output right alongside your written content, making your note-taking process more dynamic and interactive.
-By default, it supports running JavaScript, but you can also configure it to run any other shell commands.
+By default, it supports running `JavaScript`, but you can also configure it to run any other shell commands.
 
 You can trigger shell execution in two ways:
 
@@ -118,6 +119,10 @@ These options are available only on the desktop version of Obsidian:
 - **Specify the number of initial lines to suppress:** Specify the number of initial lines to skip (e.g., shell greetings).
 
 ## Setting up Python integration
+
+### Setting up Python module (optional)
+
+If you want to use the `plots.py`, `chat.py`, and `tables.py` modules, download the project directly from this [GitHub repository](https://github.com/ichichikin/obsidian-plugin-interactivity/archive/refs/heads/main.zip). Then, copy the `py_manager.py` file and the `py_modules` directory into the Interactivity plugin's root directory, which is located at `./your_vault/.obsidian/plugins/interactivity/`.
 You can enhance the functionality by adding custom Python scripts to the `py_modules` directory within the plugin's directory. All global functions and variables in these scripts will be accessible within Obsidian.
 
 ### Installing Python
