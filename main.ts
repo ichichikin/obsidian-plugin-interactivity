@@ -444,10 +444,10 @@ class InteractivitySettingTab extends PluginSettingTab {
 					}));
 
 			const enviromentVariablesEl = new Setting(containerEl)
-				.setName('Enviroment variables, one per line')
+				.setName('Environment variables, one per line')
 				.setDesc('Set environment variables. Use ##plugin## to refer to the plugin\'s directory.')
 				.addTextArea(text => text
-					.setPlaceholder('Enviroment variables')
+					.setPlaceholder('Environment variables')
 					.setValue(this.plugin.settings.enviromentVariables)
 					.onChange(async (value) => {
 						this.plugin.settings.enviromentVariables = value;
